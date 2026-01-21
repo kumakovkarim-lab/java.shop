@@ -1,1 +1,7 @@
-//тут добавите ошибки если в магазине требуют больше товаров чем на складе есть
+package com.warehouse.service;
+
+public class InsufficientStockException extends RuntimeException {
+    public InsufficientStockException(String message) {
+       super (message);
+    }
+}
