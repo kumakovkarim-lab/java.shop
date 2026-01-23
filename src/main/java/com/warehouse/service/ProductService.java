@@ -43,6 +43,7 @@ public class ProductService {
             throw new InsufficientStockException("Not enough stock for sale");
         }
 
+
         int newQuantity = product.getQuantity() - amount;
         repository.updateQuantity(productId, newQuantity);
     }
