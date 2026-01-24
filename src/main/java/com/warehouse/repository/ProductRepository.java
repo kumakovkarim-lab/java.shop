@@ -71,7 +71,8 @@ public class ProductRepository {
             statement.setInt(1, newQuantity);
             statement.setInt(2, id);
             statement.executeUpdate();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             throw new RuntimeException("Failed to update product quantity", e);
         }
     }

@@ -1,5 +1,4 @@
 package com.warehouse.service;
-
 import com.warehouse.model.Product;
 import com.warehouse.repository.ProductRepository;
 
