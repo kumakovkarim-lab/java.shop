@@ -33,7 +33,7 @@ public void setld(int id){
     this.id = id;
 }
 
-public String gerName(){
+public String getName(){
     return name;
 }
 
@@ -53,9 +53,9 @@ public BigDecimal getPrice(){
     return price;
 }
 
-public void setPrice(BigDecimal price){
+  public void setPrice(BigDecimal price){
     this.price = price;
-}
+  }
 
 public int getQuantity(){
     return quantity;
