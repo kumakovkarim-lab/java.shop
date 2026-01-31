@@ -3,7 +3,7 @@ package com.warehouse;
 import com.warehouse.controller.ProductController;
 import com.warehouse.model.Product;
 import com.warehouse.repository.ProductRepository;
-import com.warehouse.service.InsufficientStockException;
+import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.service.ProductService;
 
 import java.math.BigDecimal;
