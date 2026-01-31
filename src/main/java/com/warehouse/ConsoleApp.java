@@ -27,14 +27,12 @@ public class ConsoleApp {
                     case "3" -> sellProduct(scanner, controller);
                     case "4" -> {
                         System.out.println("Goodbye!");
-                        return;
-                    }
+                        return;}
                     default -> System.out.println("Unknown option. Try again.");
                 }
             }
         }
     }
-
     private static void printMenu() {
         System.out.println();
         System.out.println("1. List products");
@@ -50,9 +48,9 @@ public class ConsoleApp {
             System.out.println("No products found.");
             return;
         }
-
         for (Product product : products) {
-            System.out.printf("ID: %d | %s | %s | %s | Qty: %d%n",
+
+            System.out.printf("ID: %d | %s | %s | %s | Qty: %d/n",
                     product.getId(),
                     product.getName(),
                     product.getCategory(),
@@ -60,7 +58,6 @@ public class ConsoleApp {
                     product.getQuantity());
         }
     }
-
     private static void addProduct(Scanner scanner, ProductController controller) {
         System.out.print("Name: ");
         String name = scanner.nextLine().trim();

@@ -11,6 +11,7 @@ public class ProductController {
         this.service = service;
     }
 
+
     public List<Product> listProducts() {
         return service.listProducts();
     }
