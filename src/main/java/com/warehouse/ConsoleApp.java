@@ -27,7 +27,8 @@ public class ConsoleApp {
                     case "3" -> sellProduct(scanner, controller);
                     case "4" -> {
                         System.out.println("Goodbye!");
-                        return;}
+                        return;
+                    }
                     default -> System.out.println("Unknown option. Try again.");
                 }
             }
