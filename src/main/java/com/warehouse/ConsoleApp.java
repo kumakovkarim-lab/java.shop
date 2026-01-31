@@ -51,7 +51,7 @@ public class ConsoleApp {
         }
         for (Product product : products) {
 
-            System.out.printf("ID: %d | %s | %s | %s | Qty: %d/n",
+            System.out.printf("ID: %d | %s | %s | %s | Qty: %d\n",
                     product.getId(),
                     product.getName(),
                     product.getCategory(),
