@@ -25,7 +25,8 @@ public class ConsoleApp {
                     case "1" -> listProducts(controller);
                     case "2" -> addProduct(scanner, controller);
                     case "3" -> sellProduct(scanner, controller);
-                    case "4" -> {
+                    case "4" -> restockProduct(scanner, controller);
+                    case "5" -> {
                         System.out.println("Goodbye!");
                         return;
                     }
@@ -34,12 +35,14 @@ public class ConsoleApp {
             }
         }
     }
+
     private static void printMenu() {
         System.out.println();
         System.out.println("1. List products");
         System.out.println("2. Add product");
         System.out.println("3. Sell product");
         System.out.println("4. Exit");
+        System.out.println("5. Restock product:");
         System.out.print("Choose an option: ");
     }
 
@@ -59,6 +62,7 @@ public class ConsoleApp {
                     product.getQuantity());
         }
     }
+
     private static void addProduct(Scanner scanner, ProductController controller) {
         System.out.print("Name: ");
         String name = scanner.nextLine().trim();
@@ -77,12 +81,41 @@ public class ConsoleApp {
         int amount = readInt(scanner, "Amount to sell: ");
 
         try {
-            controller.sellProduct(productId, amount);
+            Product updatedProduct = controller.sellProduct(productId, amount);
+            int oldQuantity = updatedProduct.getQuantity() + amount;
+            System.out.println("\n* SALES *");
+            System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
+            System.out.printf("price per init: %s%n", updatedProduct.getPrice());
+            System.out.printf("Quantity sold: %d%n", amount);
+            System.out.printf("Total price: %s%n", updatedProduct.getPrice().multiply(new java.math.BigDecimal(amount)));
+            System.out.println("----------------------------");
+            System.out.printf("Remainig stock: %d%n", updatedProduct.getQuantity());
             System.out.println("Sale completed.");
         } catch (InsufficientStockException | IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
+
+    private static void restockProduct(Scanner scanner, ProductController controller) {
+        int productId = readInt(scanner, "Product ID: ");
+        int amount = readInt(scanner, "Amount to restock: ");
+        try {
+            Product updatedProduct =  controller.restockProduct(productId, amount);
+            int oldQuantity = updatedProduct.getQuantity() - amount;
+            System.out.println("\n*RESTOCK*  ");
+            System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
+            System.out.printf("Previous Quantity: %d%n", oldQuantity);
+            System.out.printf("Added: %d%n", amount);
+            System.out.printf("Current Quantity: %d%n", updatedProduct.getQuantity());
+            System.out.println("----------------------------");
+            System.out.println("Restock completed.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error :" + e.getMessage());
+        }
+    }
+
+
+
 
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
