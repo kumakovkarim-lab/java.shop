@@ -3,10 +3,12 @@ import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.model.Product;
 import com.warehouse.repository.ProductRepository;
 
+import java.math.BigDecimal
 import java.util.List;
 
 public class ProductService {
     private final ProductRepository repository;
+    private final AccountRepository accountRepository
 
     public ProductService(ProductRepository repository) {
         this.repository = repository;
