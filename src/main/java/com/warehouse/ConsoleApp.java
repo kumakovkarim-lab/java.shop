@@ -25,6 +25,7 @@ public class ConsoleApp {
                     case "1" -> listProducts(controller);
                     case "2" -> addProduct(scanner, controller);
                     case "3" -> sellProduct(scanner, controller);
+                    case "5" -> restockProduct(scanner, controller);
                     case "4" -> {
                         System.out.println("Goodbye!");
                         return;
@@ -34,6 +35,7 @@ public class ConsoleApp {
             }
         }
     }
+
     private static void printMenu() {
         System.out.println();
         System.out.println("1. List products");
@@ -59,6 +61,7 @@ public class ConsoleApp {
                     product.getQuantity());
         }
     }
+
     private static void addProduct(Scanner scanner, ProductController controller) {
         System.out.print("Name: ");
         String name = scanner.nextLine().trim();
@@ -83,6 +86,20 @@ public class ConsoleApp {
             System.out.println("Error: " + e.getMessage());
         }
     }
+
+    private static void restockProduct(Scanner scanner, ProductController controller) {
+        int productId = readInt(scanner, "Product ID: ");
+        int amount = readInt(scanner, "Amount to restock: ");
+        try {
+            controller.restockProduct(productId, amount);
+            System.out.println("Restock completed.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error :" + e.getMessage());
+        }
+    }
+
+
+
 
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
