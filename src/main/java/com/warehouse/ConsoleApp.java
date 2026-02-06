@@ -25,8 +25,8 @@ public class ConsoleApp {
                     case "1" -> listProducts(controller);
                     case "2" -> addProduct(scanner, controller);
                     case "3" -> sellProduct(scanner, controller);
-                    case "5" -> restockProduct(scanner, controller);
-                    case "4" -> {
+                    case "4" -> restockProduct(scanner, controller);
+                    case "5" -> {
                         System.out.println("Goodbye!");
                         return;
                     }
