@@ -19,12 +19,13 @@ public class ProductController {
         service.addProduct(product);
     }
 
-    public void restockProduct(int productId, int amount) {
-        service.restock(productId, amount);
+    public Product restockProduct(int productId, int amount) {
+        return service.restock(productId, amount);
     }
 
-    public void sellProduct(int productId, int amount) {
+    public Product sellProduct(int productId, int amount) {
         service.sell(productId, amount);
+        return service.sell(productId, amount);
     }
 }
 

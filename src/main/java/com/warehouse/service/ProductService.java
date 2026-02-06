@@ -20,7 +20,7 @@ public class ProductService {
         repository.add(product);
     }
 
-    public void restock(int productId, int amount) {
+    public Product restock(int productId, int amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Restock amount must be positive");
         }
@@ -29,9 +29,11 @@ public class ProductService {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
         int newQuantity = product.getQuantity() + amount;
         repository.updateQuantity(productId, newQuantity);
+        product.setQuantity(newQuantity);
+        return product;
     }
 
-    public void sell(int productId, int amount) {
+    public Product sell(int productId, int amount) {
         if (amount <= 0) {
             throw new IllegalArgumentException("Sell amount must be positive");
         }
@@ -46,6 +48,8 @@ public class ProductService {
 
         int newQuantity = product.getQuantity() - amount;
         repository.updateQuantity(productId, newQuantity);
+        product.setQuantity(newQuantity);
+        return product;
     }
 }
 
