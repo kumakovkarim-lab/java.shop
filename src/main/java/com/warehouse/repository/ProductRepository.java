@@ -16,9 +16,7 @@ public class ProductRepository {
             "SELECT id, name, category, price, quantity FROM products WHERE id = ?";
     private static final String INSERT =
             "INSERT INTO products (name, category, price, quantity) VALUES (?, ?, ?, ?)";
-    private static final String UPDATE_QUANTITY =
-            "UPDATE products SET quantity = ? W" +
-                    "HERE id = ?";
+    private static final String UPDATE_QUANTITY = "UPDATE products SET quantity = ? WHERE id = ?";
 
     public List<Product> findAll() {
         List<Product> products = new ArrayList<>();
@@ -88,4 +86,3 @@ public class ProductRepository {
         );
     }
 }
-

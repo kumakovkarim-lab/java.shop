@@ -18,13 +18,15 @@ public class ProductController {
     public void addProduct(Product product) {
         service.addProduct(product);
     }
-
-    public void restockProduct(int productId, int amount) {
-        service.restock(productId, amount);
+    public Product restockProduct(int productId, int amount) {
+        return service.restock(productId, amount);
     }
 
-    public void sellProduct(int productId, int amount) {
-        service.sell(productId, amount);
+    public Product sellProduct(int productId, int amount) {
+        return service.sell(productId, amount);
+    }
+    public java.math.BigDecimal getBalance() {
+        return service.getBalance();
     }
 }
 

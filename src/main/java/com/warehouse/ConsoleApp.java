@@ -15,7 +15,7 @@ public class ConsoleApp {
     public static void main(String[] args) {
         ProductRepository repository = new ProductRepository();
         AccountRepository accountRepository = new AccountRepository();
-        ProductService service = new ProductService(repository);
+        ProductService service = new ProductService(repository, accountRepository);
         ProductController controller = new ProductController(service);
 
         try (Scanner scanner = new Scanner(System.in)) {
@@ -37,14 +37,13 @@ public class ConsoleApp {
             }
         }
     }
-
-    private static void printMenu() {
-        System.out.println();
+    private static void printMenu(ProductController controller) {
+        System.out.println("\nCurrent Balance: $" + controller.getBalance());
         System.out.println("1. List products");
         System.out.println("2. Add product");
         System.out.println("3. Sell product");
-        System.out.println("4. Exit");
-        System.out.println("5. Restock product:");
+        System.out.println("4. Restock product"); // Поменял местами для порядка
+        System.out.println("5. Exit");
         System.out.print("Choose an option: ");
     }
 

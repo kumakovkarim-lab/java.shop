@@ -4,20 +4,18 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 public class DatabaseConfig {
-    private static final String DEFAULT_URL = System.getenv("DB_URL");
-    private static final String DEFAULT_USER = System.getenv("DB_USER");
-    private static final String DEFAULT_PASSWORD = System.getenv("DB_PASSWORD");
+    private static Connection connection;
 
     private DatabaseConfig() {
     }
+
     public static Connection getConnection() throws SQLException {
-        String url = readEnvOrDefault("DB_URL", DEFAULT_URL);
-        String user = readEnvOrDefault("DB_USER", DEFAULT_USER);
-        String password = readEnvOrDefault("DB_PASSWORD", DEFAULT_PASSWORD);
-        return DriverManager.getConnection(url, user, password);
-    }
-    private static String readEnvOrDefault(String key, String fallback) {
-        String value = System.getenv(key);
-        return value == null || value.isBlank() ? fallback : value;
+        if (connection == null || connection.isClosed()) {
+            String url = System.getenv("DB_URL");
+            String user = System.getenv("DB_USER");
+            String password = System.getenv("DB_PASSWORD");
+            connection = DriverManager.getConnection(url, user, password);
+        }
+        return connection;
     }
 }
