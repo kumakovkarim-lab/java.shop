@@ -2,6 +2,7 @@ package com.warehouse;
 
 import com.warehouse.controller.ProductController;
 import com.warehouse.model.Product;
+import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.service.ProductService;
@@ -13,12 +14,13 @@ import java.util.Scanner;
 public class ConsoleApp {
     public static void main(String[] args) {
         ProductRepository repository = new ProductRepository();
+        AccountRepository accountRepository = new AccountRepository();
         ProductService service = new ProductService(repository);
         ProductController controller = new ProductController(service);
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
-                printMenu();
+                printMenu(controller);
                 String choice = scanner.nextLine().trim();
 
                 switch (choice) {
@@ -85,11 +87,12 @@ public class ConsoleApp {
             int oldQuantity = updatedProduct.getQuantity() + amount;
             System.out.println("\n* SALES *");
             System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
-            System.out.printf("price per init: %s%n", updatedProduct.getPrice());
+            System.out.printf("Price per unit: %s%n", updatedProduct.getPrice());
             System.out.printf("Quantity sold: %d%n", amount);
-            System.out.printf("Total price: %s%n", updatedProduct.getPrice().multiply(new java.math.BigDecimal(amount)));
+            System.out.printf("Total income: %s%n", updatedProduct.getPrice().multiply(new BigDecimal(amount)));
+            System.out.println("New Balance: $" + controller.getBalance());
             System.out.println("----------------------------");
-            System.out.printf("Remainig stock: %d%n", updatedProduct.getQuantity());
+            System.out.printf("Remaining stock: %d%n", updatedProduct.getQuantity());
             System.out.println("Sale completed.");
         } catch (InsufficientStockException | IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
@@ -100,17 +103,20 @@ public class ConsoleApp {
         int productId = readInt(scanner, "Product ID: ");
         int amount = readInt(scanner, "Amount to restock: ");
         try {
-            Product updatedProduct =  controller.restockProduct(productId, amount);
+            Product updatedProduct = controller.restockProduct(productId, amount);
             int oldQuantity = updatedProduct.getQuantity() - amount;
-            System.out.println("\n*RESTOCK*  ");
+            BigDecimal totalCost = updatedProduct.getPrice().multiply(new BigDecimal(amount));
+            System.out.println("\n* RESTOCK *");
             System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
             System.out.printf("Previous Quantity: %d%n", oldQuantity);
             System.out.printf("Added: %d%n", amount);
+            System.out.printf("Total cost: %s%n", totalCost);
             System.out.printf("Current Quantity: %d%n", updatedProduct.getQuantity());
+            System.out.println("New Balance: $" + controller.getBalance());
             System.out.println("----------------------------");
             System.out.println("Restock completed.");
         } catch (IllegalArgumentException e) {
-            System.out.println("Error :" + e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
