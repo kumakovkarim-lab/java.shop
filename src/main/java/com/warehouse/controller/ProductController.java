@@ -1,7 +1,4 @@
-ProductController
-
-
-        package com.warehouse.controller;
+package com.warehouse.controller;
 
 import com.warehouse.model.Product;
 import com.warehouse.service.ProductService;
