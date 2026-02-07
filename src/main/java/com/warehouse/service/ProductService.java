@@ -8,8 +8,6 @@ import com.warehouse.repository.ProductRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Optional;
 
 public class ProductService {
     private final ProductRepository repository;
@@ -25,29 +23,15 @@ public class ProductService {
     }
 
     public void addProduct(Product product) {
-        if (product.getName() == null  product.getName().trim().isEmpty()) {
+        if (product.getName() == null || product.getName().trim().isEmpty()) {
             throw new ValidationException("Product name can not be empty...");
         }
-        if (product.getPrice() == null  product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ValidationException("Price MUST be greater than ZERO...");
-        }
-        if (product.getCategoryId() <= 0) {
-            throw new ValidationException("Invalid Category ID");
+        if (product.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Price MUST be grater than ZERO...");
         }
         repository.add(product);
     }
 
-    public List<Product> getLowStockProducts() {
-        return repository.findAll().stream()
-                .filter(p -> p.getQuantity() < 5)
-                .collect(Collectors.toList());
-    }
-
-    public BigDecimal calculateTotalInventoryValue() {
-        return repository.findAll().stream()
-                .map(p -> p.getPrice().multiply(BigDecimal.valueOf(p.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
 
     public BigDecimal getBalance() {
         return accountRepository.getBalance();
@@ -59,11 +43,11 @@ public class ProductService {
         Product product = repository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
-        BigDecimal cost = product.getPrice().multiply(BigDecimal.valueOf(amount));
+        BigDecimal cost = product.getPrice().multiply(new BigDecimal(amount));
         BigDecimal currentBalance = accountRepository.getBalance();
 
         if (currentBalance.compareTo(cost) < 0) {
-            throw new IllegalArgumentException("Insufficient funds!");
+            throw new IllegalArgumentException("Insufficient funds! Cost: " + cost + ", Balance: " + currentBalance);
         }
 
         int newQuantity = product.getQuantity() + amount;
@@ -84,7 +68,7 @@ public class ProductService {
             throw new InsufficientStockException("Not enough stock");
         }
 
-        BigDecimal income = product.getPrice().multiply(BigDecimal.valueOf(amount));
+        BigDecimal income = product.getPrice().multiply(new BigDecimal(amount));
         BigDecimal currentBalance = accountRepository.getBalance();
 
         int newQuantity = product.getQuantity() - amount;
