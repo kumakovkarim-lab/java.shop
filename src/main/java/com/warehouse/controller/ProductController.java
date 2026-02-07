@@ -3,6 +3,7 @@ package com.warehouse.controller;
 import com.warehouse.model.Product;
 import com.warehouse.service.ProductService;
 import java.util.List;
+import java.math.BigDecimal; // Импортируем для баланса
 
 public class ProductController {
     private final ProductService service;
@@ -18,6 +19,7 @@ public class ProductController {
     public void addProduct(Product product) {
         service.addProduct(product);
     }
+
     public Product restockProduct(int productId, int amount) {
         return service.restock(productId, amount);
     }
@@ -25,11 +27,8 @@ public class ProductController {
     public Product sellProduct(int productId, int amount) {
         return service.sell(productId, amount);
     }
-    public java.math.BigDecimal getBalance() {
-        return service.getBalance();
+
+    public BigDecimal getBalance() {
+        return service.getCurrentBalance();
     }
 }
-
-
-
-
