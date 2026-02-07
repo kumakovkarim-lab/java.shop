@@ -1,9 +1,11 @@
 package com.warehouse;
 
 import com.warehouse.controller.ProductController;
+import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
 import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
+import com.warehouse.repository.CategoryRepository;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.service.ProductService;
 
@@ -15,6 +17,7 @@ public class ConsoleApp {
     public static void main(String[] args) {
         ProductRepository repository = new ProductRepository();
         AccountRepository accountRepository = new AccountRepository();
+        CategoryRepository categoryRepository = new CategoryRepository();
         ProductService service = new ProductService(repository, accountRepository);
         ProductController controller = new ProductController(service);
 
@@ -25,7 +28,7 @@ public class ConsoleApp {
 
                 switch (choice) {
                     case "1" -> listProducts(controller);
-                    case "2" -> addProduct(scanner, controller);
+                    case "2" -> addProduct(scanner, controller, categoryRepository);
                     case "3" -> sellProduct(scanner, controller);
                     case "4" -> restockProduct(scanner, controller);
                     case "5" -> {
@@ -42,7 +45,7 @@ public class ConsoleApp {
         System.out.println("1. List products");
         System.out.println("2. Add product");
         System.out.println("3. Sell product");
-        System.out.println("4. Restock product"); // Поменял местами для порядка
+        System.out.println("4. Restock product");
         System.out.println("5. Exit");
         System.out.print("Choose an option: ");
     }
@@ -54,27 +57,34 @@ public class ConsoleApp {
             return;
         }
         for (Product product : products) {
-
-            System.out.printf("ID: %d | %s | %s | %s | Qty: %d\n",
+            System.out.printf("ID: %d | %s | Category: %s | Price: %s | Qty: %d\n",
                     product.getId(),
                     product.getName(),
-                    product.getCategory(),
+                    product.getCategoryName(),
                     product.getPrice(),
                     product.getQuantity());
         }
     }
 
-    private static void addProduct(Scanner scanner, ProductController controller) {
-        System.out.print("Name: ");
-        String name = scanner.nextLine().trim();
-        System.out.print("Category: ");
-        String category = scanner.nextLine().trim();
-        BigDecimal price = readBigDecimal(scanner, "Price: ");
-        int quantity = readInt(scanner, "Quantity: ");
+    private static void addProduct(Scanner scanner, ProductController controller, CategoryRepository categoryRepository) {
+        try {
+            System.out.print("Name: ");
+            String name = scanner.nextLine().trim();
+            categoryRepository.printAllCategories();
+            int catId = readInt(scanner, "Enter Category ID: ");
+            BigDecimal price = readBigDecimal(scanner, "Price: ");
+            int quantity = readInt(scanner, "Quantity: ");
 
-        Product product = new Product(name, category, price, quantity);
-        controller.addProduct(product);
-        System.out.println("Product added.");
+            Product product = new Product(name, catId, price, quantity);
+            controller.addProduct(product);
+            System.out.println("Product added.");
+        } catch (ValidationException e) {
+            System.out.println("Validation error: " + e.getMessage());
+        }catch (Exception e) {
+            System.out.println("Unexpected error: " + e.getMessage());
+        }
+
+
     }
 
     private static void sellProduct(Scanner scanner, ProductController controller) {

@@ -4,27 +4,28 @@ import java.math.BigDecimal;
 public class Product {
     private int id;
     private String name;
-    private String category;
     private BigDecimal price;
     private int quantity;
+    private int categoryId;
+    private String categoryName;
 
     public Product() {
     }
 
-    public Product(String name, String category, BigDecimal price, int quantity) {
+    public Product(String name, int categoryId, BigDecimal price, int quantity) {
         this.name = name;
-        this.category = category;
+        this.categoryId = categoryId;
         this.price = price;
         this.quantity = quantity;
     }
 
-    public Product(int id, String name, String category, BigDecimal price, int quantity) {
+    public Product(int id, String name, int categoryId, String catrgoryName, BigDecimal price, int quantity) {
         this.id = id;
         this.name = name;
-        this.category = category;
+        this.categoryId = categoryId;
+        this.categoryName = catrgoryName;
         this.price = price;
         this.quantity = quantity;
-
     }
 
     public int getId() {
@@ -43,30 +44,29 @@ public class Product {
         this.name = name;
     }
 
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-
     public BigDecimal getPrice() {
         return price;
     }
-
-
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
-
     public int getQuantity() {
         return quantity;
     }
-
-
     public void setQuantity(int quantity) {
         this.quantity = quantity;
     }
+    public int getCategoryId() {
+        return categoryId;
+    }
+    public void setCategoryId(int categoryId) {
+        this.categoryId = categoryId;
+    }
+    public String getCategoryName() {
+        return categoryName;
+    }
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
 }

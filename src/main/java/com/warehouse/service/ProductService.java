@@ -1,6 +1,7 @@
 package com.warehouse.service;
 
 import com.warehouse.exceptions.InsufficientStockException;
+import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
 import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
@@ -22,6 +23,12 @@ public class ProductService {
     }
 
     public void addProduct(Product product) {
+        if (product.getName() == null || product.getName().trim().isEmpty()) {
+            throw new ValidationException("Product name can not be empty...");
+        }
+        if (product.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Price MUST be grater than ZERO...");
+        }
         repository.add(product);
     }
 
