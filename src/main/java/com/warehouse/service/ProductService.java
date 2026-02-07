@@ -1,78 +1,102 @@
-package com.warehouse.service;
+package com.warehouse.repository;
 
+import com.warehouse.DatabaseConfig;
 import com.warehouse.model.Product;
-import com.warehouse.repository.AccountRepository;
-import com.warehouse.repository.ProductRepository;
 
-import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-public class ProductService {
-    private final ProductRepository repository;
-    private final AccountRepository accountRepository;
+public class ProductRepository {
 
-    public ProductService(ProductRepository repository, AccountRepository accountRepository) {
-        this.repository = repository;
-        this.accountRepository = accountRepository;
-    }
+    private static final String SELECT_ALL =
+            "SELECT id, name, category, price, quantity FROM products ORDER BY id";
 
-    public List<Product> listProducts() {
-        return repository.findAll();
-    }
+    private static final String SELECT_BY_ID =
+            "SELECT id, name, category, price, quantity FROM products WHERE id = ?";
 
-    public void addProduct(Product product) {
-        repository.add(product);
-    }
+    private static final String INSERT =
+            "INSERT INTO products (name, category, price, quantity) VALUES (?, ?, ?, ?)";
 
-    public BigDecimal getCurrentBalance() {
-        return accountRepository.getBalance();
-    }
+    private static final String UPDATE_QUANTITY =
+            "UPDATE products SET quantity = ? WHERE id = ?";
 
-    public Product restock(int productId, int amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Restock amount must be positive");
+    public List<Product> findAll() {
+        List<Product> products = new ArrayList<>();
+
+        try (Connection connection = DatabaseConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SELECT_ALL);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                products.add(mapRow(resultSet));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to load products", e);
         }
 
-        Product product = repository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-
-        BigDecimal totalCost = product.getPrice().multiply(new BigDecimal(amount));
-        BigDecimal currentBalance = accountRepository.getBalance();
-
-        if (currentBalance.compareTo(totalCost) < 0) {
-            throw new IllegalArgumentException("Insufficient funds! Cost: " + totalCost + ", Balance: " + currentBalance);
-        }
-
-
-        int newQuantity = product.getQuantity() + amount;
-        repository.updateQuantity(productId, newQuantity);
-        accountRepository.updateBalance(currentBalance.subtract(totalCost));
-
-        product.setQuantity(newQuantity);
-        return product;
+        return products;
     }
 
-    public Product sell(int productId, int amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Sell amount must be positive");
+    public Optional<Product> findById(int id) {
+        try (Connection connection = DatabaseConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(SELECT_BY_ID)) {
+
+            statement.setInt(1, id);
+
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to load product by id", e);
         }
 
-        Product product = repository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+        return Optional.empty();
+    }
 
-        if (product.getQuantity() < amount) {
-            throw new InsufficientStockException("Not enough stock for sale. Available: " + product.getQuantity());
+    public void add(Product product) {
+        try (Connection connection = DatabaseConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(INSERT)) {
+
+            statement.setString(1, product.getName());
+            statement.setString(2, product.getCategory());
+            statement.setBigDecimal(3, product.getPrice());
+            statement.setInt(4, product.getQuantity());
+            statement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to insert product", e);
         }
+    }
 
+    public void updateQuantity(int id, int newQuantity) {
+        try (Connection connection = DatabaseConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(UPDATE_QUANTITY)) {
 
-        BigDecimal income = product.getPrice().multiply(new BigDecimal(amount));
-        BigDecimal currentBalance = accountRepository.getBalance();
+            statement.setInt(1, newQuantity);
+            statement.setInt(2, id);
+            statement.executeUpdate();
 
-        int newQuantity = product.getQuantity() - amount;
-        repository.updateQuantity(productId, newQuantity);
-        accountRepository.updateBalance(currentBalance.add(income));
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update product quantity", e);
+        }
+    }
 
-        product.setQuantity(newQuantity);
-        return product;
+    private Product mapRow(ResultSet rs) throws SQLException {
+        return new Product(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("category"),
+                rs.getBigDecimal("price"),
+                rs.getInt("quantity")
+        );
     }
 }
