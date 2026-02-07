@@ -1,13 +1,15 @@
 package com.warehouse.repository;
 
 import com.warehouse.DatabaseConfig;
+import com.warehouse.repository.interfaces.IAccountRepository;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class AccountRepository {
+public class AccountRepository implements IAccountRepository {
     private static final String SELECT_BALANCE = "SELECT balance FROM account WHERE id = 1";
     private static final String UPDATE_BALANCE = "UPDATE account SET balance = ? WHERE id = ?";
 

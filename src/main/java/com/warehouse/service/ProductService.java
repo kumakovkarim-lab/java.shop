@@ -5,15 +5,16 @@ import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
 import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
+import com.warehouse.repository.interfaces.IAccountRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductService {
     private final ProductRepository repository;
-    private final AccountRepository accountRepository;
+    private final IAccountRepository accountRepository;
 
-    public ProductService(ProductRepository repository, AccountRepository accountRepository) {
+    public ProductService(ProductRepository repository, IAccountRepository accountRepository) {
         this.repository = repository;
         this.accountRepository = accountRepository;
     }

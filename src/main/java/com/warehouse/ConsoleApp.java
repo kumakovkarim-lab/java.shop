@@ -8,7 +8,7 @@ import com.warehouse.repository.ProductRepository;
 import com.warehouse.repository.CategoryRepository;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.service.ProductService;
-
+import com.warehouse.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
@@ -20,6 +20,7 @@ public class ConsoleApp {
         CategoryRepository categoryRepository = new CategoryRepository();
         ProductService service = new ProductService(repository, accountRepository);
         ProductController controller = new ProductController(service);
+        UserRepository userRepo = new UserRepository();
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (true) {
@@ -129,9 +130,6 @@ public class ConsoleApp {
         }
     }
 
-
-
-
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -156,4 +154,3 @@ public class ConsoleApp {
         }
     }
 }
-
