@@ -4,23 +4,31 @@ public class User {
     private int id;
     private String username;
     private String password;
-    private String role;
+    private Role role;
 
+    public User(String username, String password, Role role) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+    }
 
-    public int getId() {
-        return id; }
+    public User() {
+    }
+
+    public String getUsername() {return username;}
+    public String getPassword() {return password;}
+    public Role getRole() {return role;}
+
     public void setId(int id) {
-        this.id = id; }
-    public String getUsername() {
-        return username; }
+        this.id = id;
+    }
     public void setUsername(String username) {
-        this.username = username; }
-    public String getPassword() {
-        return password; }
+        this.username = username;
+    }
     public void setPassword(String password) {
-        this.password = password; }
-    public String getRole() {
-        return role; }
-    public void setRole(String role) {
-        this.role = role; }
+        this.password = password;
+    }
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }

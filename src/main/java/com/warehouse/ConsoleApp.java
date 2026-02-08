@@ -3,45 +3,25 @@ package com.warehouse;
 import com.warehouse.controller.ProductController;
 import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
+import com.warehouse.presentation.Console.UI;
 import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
 import com.warehouse.repository.CategoryRepository;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.service.ProductService;
-import com.warehouse.repository.UserRepository;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleApp {
     public static void main(String[] args) {
-        ProductRepository repository = new ProductRepository();
-        AccountRepository accountRepository = new AccountRepository();
-        CategoryRepository categoryRepository = new CategoryRepository();
-        ProductService service = new ProductService(repository, accountRepository);
-        ProductController controller = new ProductController(service);
-        UserRepository userRepo = new UserRepository();
-
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (true) {
-                printMenu(controller);
-                String choice = scanner.nextLine().trim();
-
-                switch (choice) {
-                    case "1" -> listProducts(controller);
-                    case "2" -> addProduct(scanner, controller, categoryRepository);
-                    case "3" -> sellProduct(scanner, controller);
-                    case "4" -> restockProduct(scanner, controller);
-                    case "5" -> {
-                        System.out.println("Goodbye!");
-                        return;
-                    }
-                    default -> System.out.println("Unknown option. Try again.");
-                }
-            }
-        }
+        UI ui = new UI();
+        ui.start();
     }
-    private static void printMenu(ProductController controller) {
+}
+/*
+       private static void printMenu(ProductController controller) {
         System.out.println("\nCurrent Balance: $" + controller.getBalance());
         System.out.println("1. List products");
         System.out.println("2. Add product");
@@ -130,6 +110,9 @@ public class ConsoleApp {
         }
     }
 
+
+
+
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -154,3 +137,5 @@ public class ConsoleApp {
         }
     }
 }
+
+*/
