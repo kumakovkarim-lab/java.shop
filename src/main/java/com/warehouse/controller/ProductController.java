@@ -21,6 +21,10 @@ public class ProductController {
         service.addProduct(product);
     }
 
+    public boolean deleteProduct(int id) {
+        return service.deleteProduct(id);
+    }
+
     public Product restockProduct(int productId, int amount) {
         return service.restock(productId, amount);
     }

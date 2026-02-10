@@ -3,7 +3,6 @@ package com.warehouse;
 import com.warehouse.controller.ProductController;
 import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
-import com.warehouse.presentation.Console.UI;
 import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
 import com.warehouse.repository.CategoryRepository;
@@ -33,7 +32,8 @@ public class ConsoleApp {
                     case "2" -> addProduct(scanner, controller, categoryRepository);
                     case "3" -> sellProduct(scanner, controller);
                     case "4" -> restockProduct(scanner, controller);
-                    case "5" -> {
+                    case "5" -> deleteProduct(scanner, controller);
+                    case "6" -> {
                         System.out.println("Exiting...");
                         return;
                     }
@@ -49,7 +49,8 @@ public class ConsoleApp {
         System.out.println("2. Add product");
         System.out.println("3. Sell product");
         System.out.println("4. Restock product");
-        System.out.println("5. Exit");
+        System.out.println("5. Delete product");
+        System.out.println("6. Exit");
         System.out.print("Choose an option: ");
     }
 
@@ -85,6 +86,23 @@ public class ConsoleApp {
             System.out.println("Validation error: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("Unexpected error: " + e.getMessage());
+        }
+    }
+
+    private static void deleteProduct(Scanner scanner, ProductController controller) {
+        int productId = readInt(scanner, "Enter Product ID to delete: ");
+        System.out.print("Are you sure? (yes/no): ");
+        String confirm = scanner.nextLine().trim().toLowerCase();
+
+        if (confirm.equals("yes")) {
+            boolean deleted = controller.deleteProduct(productId);
+            if (deleted) {
+                System.out.println("Product deleted.");
+            } else {
+                System.out.println("Product not found.");
+            }
+        } else {
+            System.out.println("Deletion cancelled.");
         }
     }
 

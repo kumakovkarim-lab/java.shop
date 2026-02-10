@@ -124,6 +124,16 @@ public class ProductRepository {
         }
     }
 
+    public boolean deleteById(int id) {
+        try (Connection connection = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(DELETE_BY_ID)) {
+            statement.setInt(1, id);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete product", e);
+        }
+    }
+
     private Product mapRowToProduct(ResultSet rs) throws SQLException {
         return new Product(
                 rs.getInt("id"),

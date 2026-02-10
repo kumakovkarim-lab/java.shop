@@ -46,6 +46,10 @@ public class ProductService {
         }
     }
 
+    public boolean deleteProduct(int id) {
+        return repository.deleteById(id);
+    }
+
     public BigDecimal getBalance() {
         return accountRepository.getBalance();
     }
