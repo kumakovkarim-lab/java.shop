@@ -3,12 +3,12 @@ package com.warehouse.service;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
-import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
 import com.warehouse.repository.interfaces.IAccountRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public class ProductService {
     private final ProductRepository repository;
@@ -27,12 +27,24 @@ public class ProductService {
         if (product.getName() == null || product.getName().trim().isEmpty()) {
             throw new ValidationException("Product name can not be empty...");
         }
-        if (product.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            throw new ValidationException("Price MUST be grater than ZERO...");
+        if (product.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Price MUST be greater than ZERO...");
         }
-        repository.add(product);
-    }
 
+        Optional<Product> existingProduct = repository.findByNamePriceAndCategory(
+                product.getName(),
+                product.getPrice(),
+                product.getCategoryId()
+        );
+
+        if (existingProduct.isPresent()) {
+            Product existing = existingProduct.get();
+            int newQuantity = existing.getQuantity() + product.getQuantity();
+            repository.updateQuantity(existing.getId(), newQuantity);
+        } else {
+            repository.add(product);
+        }
+    }
 
     public BigDecimal getBalance() {
         return accountRepository.getBalance();
@@ -40,7 +52,6 @@ public class ProductService {
 
     public Product restock(int productId, int amount) {
         if (amount <= 0) throw new IllegalArgumentException("Restock amount must be positive");
-
         Product product = repository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
@@ -48,7 +59,7 @@ public class ProductService {
         BigDecimal currentBalance = accountRepository.getBalance();
 
         if (currentBalance.compareTo(cost) < 0) {
-            throw new IllegalArgumentException("Insufficient funds! Cost: " + cost + ", Balance: " + currentBalance);
+            throw new IllegalArgumentException("Insufficient funds!");
         }
 
         int newQuantity = product.getQuantity() + amount;
@@ -61,7 +72,6 @@ public class ProductService {
 
     public Product sell(int productId, int amount) {
         if (amount <= 0) throw new IllegalArgumentException("Sell amount must be positive");
-
         Product product = repository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 

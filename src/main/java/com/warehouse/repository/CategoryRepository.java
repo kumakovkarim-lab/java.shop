@@ -6,8 +6,8 @@ import java.sql.*;
 public class CategoryRepository {
     public void printAllCategories() {
         String sql = "SELECT id, name FROM categories";
-        try (Connection conn = DatabaseConfig.getConnection();
-             Statement stmt = conn.createStatement();
+        try (Connection connection = DatabaseConfig.getInstance().getConnection();
+             Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             System.out.println("\n* Доступные категории *");
