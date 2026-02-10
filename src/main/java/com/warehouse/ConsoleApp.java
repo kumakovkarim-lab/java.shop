@@ -15,13 +15,35 @@ import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleApp {
+
     public static void main(String[] args) {
-        UI ui = new UI();
-        ui.start();
+        ProductRepository productRepository = new ProductRepository();
+        CategoryRepository categoryRepository = new CategoryRepository();
+        AccountRepository accountRepository = new AccountRepository();
+        ProductService productService = new ProductService(productRepository, accountRepository);
+        ProductController controller = new ProductController(productService);
+
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                printMenu(controller);
+                String choice = scanner.nextLine().trim();
+
+                switch (choice) {
+                    case "1" -> listProducts(controller);
+                    case "2" -> addProduct(scanner, controller, categoryRepository);
+                    case "3" -> sellProduct(scanner, controller);
+                    case "4" -> restockProduct(scanner, controller);
+                    case "5" -> {
+                        System.out.println("Exiting...");
+                        return;
+                    }
+                    default -> System.out.println("Invalid option.");
+                }
+            }
+        }
     }
-}
-/*
-       private static void printMenu(ProductController controller) {
+
+    private static void printMenu(ProductController controller) {
         System.out.println("\nCurrent Balance: $" + controller.getBalance());
         System.out.println("1. List products");
         System.out.println("2. Add product");
@@ -61,11 +83,9 @@ public class ConsoleApp {
             System.out.println("Product added.");
         } catch (ValidationException e) {
             System.out.println("Validation error: " + e.getMessage());
-        }catch (Exception e) {
+        } catch (Exception e) {
             System.out.println("Unexpected error: " + e.getMessage());
         }
-
-
     }
 
     private static void sellProduct(Scanner scanner, ProductController controller) {
@@ -74,7 +94,6 @@ public class ConsoleApp {
 
         try {
             Product updatedProduct = controller.sellProduct(productId, amount);
-            int oldQuantity = updatedProduct.getQuantity() + amount;
             System.out.println("\n* SALES *");
             System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
             System.out.printf("Price per unit: %s%n", updatedProduct.getPrice());
@@ -110,9 +129,6 @@ public class ConsoleApp {
         }
     }
 
-
-
-
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
@@ -137,5 +153,3 @@ public class ConsoleApp {
         }
     }
 }
-
-*/

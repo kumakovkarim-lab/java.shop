@@ -56,9 +56,9 @@ public class UI {
                 case "1" -> {
                     login();
                     userController.setCurrentUser(currentUser);
-                    mainMenu(); // Переходим в основное меню после логина
+                    mainMenu();
                 }
-                case "2" -> register(); // Регистрация нового пользователя
+                case "2" -> register();
                 case "3" -> {
                     System.out.println("Goodbye!");
                     return;
@@ -82,7 +82,7 @@ public class UI {
                     case "5" -> {
                         System.out.println("Logging out...");
                         currentUser = null;
-                        return; // Выход в верхнее меню (логин/регистрация)
+                        return;
                     }
                     default -> System.out.println("Unknown option.");
                 }
@@ -127,7 +127,6 @@ public class UI {
             System.out.print("Choose password: ");
             String password = scanner.nextLine().trim();
 
-            // Создаем нового пользователя с ролью CLIENT
             User newUser = new User(username, password, Role.CLIENT);
             authService.register(newUser);
 
@@ -224,7 +223,6 @@ public class UI {
         }
     }
 
-    /* ================= HELPERS ================= */
 
     private int readInt(String prompt) {
         while (true) {
