@@ -6,6 +6,7 @@ import com.warehouse.exceptions.AccessDeniedException;
 import com.warehouse.exceptions.AuthException;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.exceptions.ValidationException;
+import com.warehouse.factory.UserFactory;
 import com.warehouse.model.Product;
 import com.warehouse.model.Role;
 import com.warehouse.model.User;
@@ -153,7 +154,7 @@ public class UI {
         String roleChoice = scanner.nextLine().trim();
         Role role = roleChoice.equals("2") ? Role.ADMIN : Role.CLIENT;
 
-        User newUser = new User(username, password, role);
+        User newUser = UserFactory.createUser(username, password, role);
         authService.register(newUser);
         System.out.println("Registration successful!");
     }
@@ -164,10 +165,8 @@ public class UI {
             System.out.println("No products found.");
             return;
         }
-        for (Product p : products) {
-            System.out.printf("ID: %d | %s | Category: %s | Price: %s | Qty: %d%n",
-                    p.getId(), p.getName(), p.getCategoryName(), p.getPrice(), p.getQuantity());
-        }
+        products.forEach(p -> System.out.printf("ID: %d | %s | Category: %s | Price: %s | Qty: %d%n",
+                p.getId(), p.getName(), p.getCategoryName(), p.getPrice(), p.getQuantity()));
     }
 
     private void addProduct() {
