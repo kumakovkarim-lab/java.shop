@@ -20,13 +20,11 @@ import java.util.Scanner;
 public class UI {
 
     private final Scanner scanner = new Scanner(System.in);
-
     private final ProductController controller;
     private final UserController userController = new UserController();
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final AuthService authService;
-
     private User currentUser;
 
     public UI() {
@@ -35,10 +33,7 @@ public class UI {
         categoryRepository = new CategoryRepository();
         userRepository = new UserRepository();
         authService = new AuthService(userRepository);
-
-        ProductService productService =
-                new ProductService(productRepository, accountRepository);
-
+        ProductService productService = new ProductService(productRepository, accountRepository);
         controller = new ProductController(productService);
     }
 
@@ -55,8 +50,10 @@ public class UI {
             switch (choice) {
                 case "1" -> {
                     login();
-                    userController.setCurrentUser(currentUser);
-                    mainMenu();
+                    if (currentUser != null) {
+                        userController.setCurrentUser(currentUser);
+                        mainMenu();
+                    }
                 }
                 case "2" -> register();
                 case "3" -> {
@@ -76,12 +73,23 @@ public class UI {
             try {
                 switch (choice) {
                     case "1" -> listProducts();
-                    case "2" -> addProduct();
+                    case "2" -> {
+                        userController.checkAdmin();
+                        addProduct();
+                    }
                     case "3" -> sellProduct();
-                    case "4" -> restockProduct();
+                    case "4" -> {
+                        userController.checkAdmin();
+                        restockProduct();
+                    }
                     case "5" -> {
+                        userController.checkAdmin();
+                        deleteProduct();
+                    }
+                    case "6" -> {
                         System.out.println("Logging out...");
                         currentUser = null;
+                        userController.logout();
                         return;
                     }
                     default -> System.out.println("Unknown option.");
@@ -94,80 +102,66 @@ public class UI {
 
     private void login() {
         System.out.println("=== LOGIN ===");
+        System.out.print("Username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Password: ");
+        String password = scanner.nextLine().trim();
 
-        while (true) {
-            System.out.print("Username: ");
-            String username = scanner.nextLine().trim();
-
-            System.out.print("Password: ");
-            String password = scanner.nextLine().trim();
-
-            try {
-                currentUser = authService.login(username, password);
-                System.out.println("Logged in as " + currentUser.getRole());
-                return;
-            } catch (AuthException e) {
-                System.out.println("Login failed: " + e.getMessage());
-            }
+        try {
+            currentUser = authService.login(username, password);
+            System.out.println("Logged in as " + currentUser.getRole());
+        } catch (AuthException e) {
+            System.out.println("Login failed: " + e.getMessage());
+            currentUser = null;
         }
     }
 
     private void register() {
         System.out.println("=== REGISTER ===");
+        System.out.print("Choose username: ");
+        String username = scanner.nextLine().trim();
 
-        while (true) {
-            System.out.print("Choose username: ");
-            String username = scanner.nextLine().trim();
-
-            if (authService.userExists(username)) {
-                System.out.println("Username already exists. Try another.");
-                continue;
-            }
-
-            System.out.print("Choose password: ");
-            String password = scanner.nextLine().trim();
-
-            User newUser = new User(username, password, Role.CLIENT);
-            authService.register(newUser);
-
-            System.out.println("Registration successful! You can now log in.");
-            break;
+        if (authService.userExists(username)) {
+            System.out.println("Username already exists.");
+            return;
         }
+
+        System.out.print("Choose password: ");
+        String password = scanner.nextLine().trim();
+        System.out.println("Select Role: 1. CLIENT | 2. ADMIN");
+        String roleChoice = scanner.nextLine().trim();
+        Role role = roleChoice.equals("2") ? Role.ADMIN : Role.CLIENT;
+
+        User newUser = new User(username, password, role);
+        authService.register(newUser);
+        System.out.println("Registration successful!");
     }
 
-
     private void printMenu() {
-        System.out.println("\n==============================");
+        System.out.println("\n--- User: " + currentUser.getUsername() + " [" + currentUser.getRole() + "] ---");
         System.out.println("Balance: $" + controller.getBalance());
         System.out.println("1. List products");
-
-        if (currentUser.getRole() == Role.ADMIN) {
+        if (userController.isAdmin()) {
             System.out.println("2. Add product");
-            System.out.println("3. Sell product");
-            System.out.println("4. Restock product");
         }
-
-        System.out.println("5. Exit");
+        System.out.println("3. Sell product");
+        if (userController.isAdmin()) {
+            System.out.println("4. Restock product");
+            System.out.println("5. Delete product");
+        }
+        System.out.println("6. Logout");
         System.out.print("Choose option: ");
     }
 
     private void listProducts() {
         List<Product> products = controller.listProducts();
-
         if (products.isEmpty()) {
             System.out.println("No products found.");
             return;
         }
-
         for (Product p : products) {
-            System.out.printf(
-                    "ID: %d | %s | Category: %s | Price: %s | Qty: %d%n",
-                    p.getId(),
-                    p.getName(),
-                    p.getCategoryName(),
-                    p.getPrice(),
-                    p.getQuantity()
-            );
+            System.out.printf("ID: %d | %s | Category: %s | Price: %s | Qty: %d%n",
+                    p.getId(), p.getName(), p.getCategoryName(), p.getPrice(), p.getQuantity());
         }
     }
 
@@ -179,28 +173,31 @@ public class UI {
             int categoryId = readInt("Category ID: ");
             BigDecimal price = readBigDecimal("Price: ");
             int quantity = readInt("Quantity: ");
-
-            Product product = new Product(name, categoryId, price, quantity);
-            controller.addProduct(product);
-
-            System.out.println("Product added successfully.");
+            controller.addProduct(new Product(name, categoryId, price, quantity));
+            System.out.println("Product added.");
         } catch (ValidationException e) {
-            System.out.println("Validation error: " + e.getMessage());
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void deleteProduct() {
+        int productId = readInt("Enter Product ID to delete: ");
+        System.out.print("Are you sure? (yes/no): ");
+        if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
+            if (controller.deleteProduct(productId)) {
+                System.out.println("Product deleted.");
+            } else {
+                System.out.println("Product not found.");
+            }
         }
     }
 
     private void sellProduct() {
         try {
             int productId = readInt("Product ID: ");
-            int amount = readInt("Amount to sell: ");
-
-            Product product = controller.sellProduct(productId, amount);
-
-            System.out.println("\n=== SALE ===");
-            System.out.println("Product: " + product.getName());
-            System.out.println("Sold: " + amount);
-            System.out.println("Remaining: " + product.getQuantity());
-            System.out.println("Balance: $" + controller.getBalance());
+            int amount = readInt("Amount: ");
+            controller.sellProduct(productId, amount);
+            System.out.println("Sale completed.");
         } catch (InsufficientStockException | IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -209,40 +206,27 @@ public class UI {
     private void restockProduct() {
         try {
             int productId = readInt("Product ID: ");
-            int amount = readInt("Amount to restock: ");
-
-            Product product = controller.restockProduct(productId, amount);
-
-            System.out.println("\n=== RESTOCK ===");
-            System.out.println("Product: " + product.getName());
-            System.out.println("Added: " + amount);
-            System.out.println("Current qty: " + product.getQuantity());
-            System.out.println("Balance: $" + controller.getBalance());
+            int amount = readInt("Amount: ");
+            controller.restockProduct(productId, amount);
+            System.out.println("Restock completed.");
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
 
-
     private int readInt(String prompt) {
         while (true) {
             System.out.print(prompt);
-            try {
-                return Integer.parseInt(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                System.out.println("Enter a valid integer.");
-            }
+            try { return Integer.parseInt(scanner.nextLine().trim()); }
+            catch (NumberFormatException e) { System.out.println("Invalid integer."); }
         }
     }
 
     private BigDecimal readBigDecimal(String prompt) {
         while (true) {
             System.out.print(prompt);
-            try {
-                return new BigDecimal(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                System.out.println("Enter a valid number.");
-            }
+            try { return new BigDecimal(scanner.nextLine().trim()); }
+            catch (NumberFormatException e) { System.out.println("Invalid number."); }
         }
     }
 }
