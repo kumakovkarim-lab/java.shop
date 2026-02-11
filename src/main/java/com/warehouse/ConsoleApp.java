@@ -1,5 +1,4 @@
 package com.warehouse;
-
 import com.warehouse.controller.ProductController;
 import com.warehouse.controller.UserController;
 import com.warehouse.exceptions.ValidationException;

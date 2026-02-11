@@ -30,11 +30,12 @@ public class UI {
     public UI() {
         ProductRepository productRepository = new ProductRepository();
         AccountRepository accountRepository = new AccountRepository();
-        categoryRepository = new CategoryRepository();
-        userRepository = new UserRepository();
-        authService = new AuthService(userRepository);
+        this.categoryRepository = new CategoryRepository();
+        this.userRepository = new UserRepository();
+        this.authService = new AuthService(userRepository);
+
         ProductService productService = new ProductService(productRepository, accountRepository);
-        controller = new ProductController(productService);
+        this.controller = new ProductController(productService);
     }
 
     public void start() {
@@ -71,33 +72,53 @@ public class UI {
             String choice = scanner.nextLine().trim();
 
             try {
-                switch (choice) {
-                    case "1" -> listProducts();
-                    case "2" -> {
-                        userController.checkAdmin();
-                        addProduct();
+                if (userController.isAdmin()) {
+                    switch (choice) {
+                        case "1" -> listProducts();
+                        case "2" -> addProduct();
+                        case "3" -> sellProduct();
+                        case "4" -> restockProduct();
+                        case "5" -> deleteProduct();
+                        case "6" -> {
+                            userController.logout();
+                            return;
+                        }
+                        default -> System.out.println("Unknown option.");
                     }
-                    case "3" -> sellProduct();
-                    case "4" -> {
-                        userController.checkAdmin();
-                        restockProduct();
+                } else {
+                    switch (choice) {
+                        case "1" -> listProducts();
+                        case "2" -> buyProduct();
+                        case "3" -> {
+                            userController.logout();
+                            return;
+                        }
+                        default -> System.out.println("Unknown option.");
                     }
-                    case "5" -> {
-                        userController.checkAdmin();
-                        deleteProduct();
-                    }
-                    case "6" -> {
-                        System.out.println("Logging out...");
-                        currentUser = null;
-                        userController.logout();
-                        return;
-                    }
-                    default -> System.out.println("Unknown option.");
                 }
             } catch (AccessDeniedException e) {
                 System.out.println("Access denied: " + e.getMessage());
             }
         }
+    }
+
+    private void printMenu() {
+        System.out.println("\n--- User: " + currentUser.getUsername() + " [" + currentUser.getRole() + "] ---");
+        System.out.println("Balance: $" + controller.getBalance());
+
+        if (userController.isAdmin()) {
+            System.out.println("1. List products");
+            System.out.println("2. Add product");
+            System.out.println("3. Sell product");
+            System.out.println("4. Restock product");
+            System.out.println("5. Delete product");
+            System.out.println("6. Logout");
+        } else {
+            System.out.println("1. List products");
+            System.out.println("2. Buy product");
+            System.out.println("3. Logout");
+        }
+        System.out.print("Choose option: ");
     }
 
     private void login() {
@@ -137,22 +158,6 @@ public class UI {
         System.out.println("Registration successful!");
     }
 
-    private void printMenu() {
-        System.out.println("\n--- User: " + currentUser.getUsername() + " [" + currentUser.getRole() + "] ---");
-        System.out.println("Balance: $" + controller.getBalance());
-        System.out.println("1. List products");
-        if (userController.isAdmin()) {
-            System.out.println("2. Add product");
-        }
-        System.out.println("3. Sell product");
-        if (userController.isAdmin()) {
-            System.out.println("4. Restock product");
-            System.out.println("5. Delete product");
-        }
-        System.out.println("6. Logout");
-        System.out.print("Choose option: ");
-    }
-
     private void listProducts() {
         List<Product> products = controller.listProducts();
         if (products.isEmpty()) {
@@ -180,15 +185,14 @@ public class UI {
         }
     }
 
-    private void deleteProduct() {
-        int productId = readInt("Enter Product ID to delete: ");
-        System.out.print("Are you sure? (yes/no): ");
-        if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
-            if (controller.deleteProduct(productId)) {
-                System.out.println("Product deleted.");
-            } else {
-                System.out.println("Product not found.");
-            }
+    private void buyProduct() {
+        try {
+            int productId = readInt("Enter Product ID to buy: ");
+            int amount = readInt("Enter amount: ");
+            controller.sellProduct(productId, amount);
+            System.out.println("Purchase successful!");
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
@@ -211,6 +215,18 @@ public class UI {
             System.out.println("Restock completed.");
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void deleteProduct() {
+        int productId = readInt("Enter Product ID to delete: ");
+        System.out.print("Are you sure? (yes/no): ");
+        if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
+            if (controller.deleteProduct(productId)) {
+                System.out.println("Product deleted.");
+            } else {
+                System.out.println("Product not found.");
+            }
         }
     }
 
