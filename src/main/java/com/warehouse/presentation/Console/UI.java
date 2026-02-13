@@ -8,6 +8,7 @@ import com.warehouse.model.*;
 import com.warehouse.repository.*;
 import com.warehouse.repository.interfaces.OrderRepository;
 import com.warehouse.service.AuthService;
+import com.warehouse.service.CartService;
 import com.warehouse.service.OrderService;
 import com.warehouse.service.ProductService;
 
@@ -25,6 +26,7 @@ public class UI {
     private final AuthService authService;
 
     private final OrderService orderService;
+    private final CartService cartService;
 
     private User currentUser;
 
@@ -41,6 +43,8 @@ public class UI {
 
         OrderRepository orderRepository = new PostgresOrderRepository();
         orderService = new OrderService(productController, orderRepository);
+
+        cartService = new CartService(productController);
     }
 
     public void start() {
@@ -77,9 +81,13 @@ public class UI {
                 if (currentUser.getRole() == Role.CLIENT) {
                     switch (choice) {
                         case "1" -> listProducts();
-                        case "2" -> buyProductWithDelivery();
-                        case "3" -> myOrders();
-                        case "4" -> {
+                        case "2" -> addToCart();
+                        case "3" -> showCart();
+                        case "4" -> removeFromCart();
+                        case "5" -> clearCart();
+                        case "6" -> checkoutCartWithDelivery();
+                        case "7" -> myOrders();
+                        case "8" -> {
                             logout();
                             return;
                         }
@@ -119,9 +127,13 @@ public class UI {
         System.out.println("1) List products");
 
         if (currentUser.getRole() == Role.CLIENT) {
-            System.out.println("2) Buy product (delivery)");
-            System.out.println("3) My orders");
-            System.out.println("4) Logout");
+            System.out.println("2) Add to cart");
+            System.out.println("3) Show cart");
+            System.out.println("4) Remove from cart");
+            System.out.println("5) Clear cart");
+            System.out.println("6) Checkout (delivery + pay)");
+            System.out.println("7) My orders");
+            System.out.println("8) Logout");
         }
 
         if (currentUser.getRole() == Role.ADMIN) {
@@ -177,6 +189,7 @@ public class UI {
 
     private void logout() {
         System.out.println("Logging out...");
+        cartService.clearCart();
         currentUser = null;
     }
 
@@ -196,43 +209,63 @@ public class UI {
         }
     }
 
-    private void buyProductWithDelivery() throws InsufficientStockException {
-        System.out.println("\n=== BUY PRODUCT ===");
+    private void addToCart() {
         listProducts();
-
-        int productId = readInt("Enter Product ID: ");
+        int productId = readInt("Enter Product ID to add: ");
         int qty = readInt("Enter quantity: ");
+        cartService.addToCart(productId, qty);
+        System.out.println("Added to cart.");
+    }
+
+    private void showCart() {
+        cartService.showCart();
+    }
+
+    private void removeFromCart() {
+        int productId = readInt("Enter Product ID to remove: ");
+        cartService.removeFromCart(productId);
+        System.out.println("Removed from cart (if existed).");
+    }
+
+    private void clearCart() {
+        cartService.clearCart();
+        System.out.println("Cart cleared.");
+    }
+
+    private void checkoutCartWithDelivery() throws InsufficientStockException {
+        if (cartService.getCart().isEmpty()) {
+            System.out.println("Cart is empty.");
+            return;
+        }
+
+        cartService.showCart();
 
         DeliveryMethod method = chooseDeliveryMethod();
         Address address = null;
-
         if (method != DeliveryMethod.PICKUP) {
             address = readAddress();
         }
 
-        System.out.print("Confirm payment? (yes/no): ");
+        System.out.print("Confirm payment for TOTAL " + cartService.getCart().getTotal() + "? (yes/no): ");
         String pay = scanner.nextLine().trim().toLowerCase();
         if (!pay.equals("yes")) {
             System.out.println("Payment cancelled.");
             return;
         }
 
-        Order order = orderService.createOrder(
-                currentUser.getUsername(),
-                productId,
-                qty,
-                method,
-                address
-        );
+        // Создаем заказ на каждый товар из корзины
+        for (CartItem item : cartService.getCart().getItems()) {
+            orderService.createOrder(
+                    currentUser.getUsername(),
+                    item.getProductId(),
+                    item.getQuantity(),
+                    method,
+                    address
+            );
+        }
 
-        System.out.println("\n✅ PURCHASE SUCCESS!");
-        System.out.println("Order ID: " + order.getId());
-        System.out.println("Product: " + order.getProductName() + " x" + order.getQuantity());
-        System.out.println("Delivery: " + order.getDeliveryMethod());
-        System.out.println("Delivery fee: " + order.getDeliveryFee());
-        System.out.println("Status: " + order.getDeliveryStatus());
-        System.out.println("Address: " + (order.getAddress() == null ? "PICKUP" : order.getAddress()));
-        System.out.println("TOTAL: " + order.getTotal());
+        cartService.clearCart();
+        System.out.println("\n✅ CHECKOUT SUCCESS! Orders saved to DB.");
         System.out.println("Balance: $" + productController.getBalance());
     }
 

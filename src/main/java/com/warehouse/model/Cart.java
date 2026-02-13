@@ -5,34 +5,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cart {
-
-    private List<CartItem> items = new ArrayList<>();
-
-    public void addItem(CartItem item) {
-        for (CartItem existing : items) {
-            if (existing.getProductId().equals(item.getProductId())) {
-                existing.setQuantity(existing.getQuantity() + item.getQuantity());
-                return;
-            }
-        }
-        items.add(item);
-    }
-
-    public void removeItem(Long productId) {
-        items.removeIf(item -> item.getProductId().equals(productId));
-    }
-
-    public BigDecimal getTotalAmount() {
-        return items.stream()
-                .map(CartItem::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
+    private final List<CartItem> items = new ArrayList<>();
 
     public List<CartItem> getItems() {
-        return items;
+        return new ArrayList<>(items);
+    }
+
+    public boolean isEmpty() {
+        return items.isEmpty();
     }
 
     public void clear() {
         items.clear();
+    }
+
+    public void addOrIncrease(CartItem newItem) {
+        for (CartItem item : items) {
+            if (item.getProductId() == newItem.getProductId()) {
+                item.setQuantity(item.getQuantity() + newItem.getQuantity());
+                return;
+            }
+        }
+        items.add(newItem);
+    }
+
+    public void remove(int productId) {
+        items.removeIf(i -> i.getProductId() == productId);
+    }
+
+    public BigDecimal getTotal() {
+        BigDecimal total = BigDecimal.ZERO;
+        for (CartItem item : items) {
+            total = total.add(item.getLineTotal());
+        }
+        return total;
     }
 }
