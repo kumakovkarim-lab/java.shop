@@ -6,11 +6,11 @@ import com.warehouse.exceptions.AccessDeniedException;
 import com.warehouse.exceptions.AuthException;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.exceptions.ValidationException;
-import com.warehouse.model.Product;
-import com.warehouse.model.Role;
-import com.warehouse.model.User;
+import com.warehouse.model.*;
 import com.warehouse.repository.*;
+import com.warehouse.repository.interfaces.OrderRepository;
 import com.warehouse.service.AuthService;
+import com.warehouse.service.OrderService;
 import com.warehouse.service.ProductService;
 
 import java.math.BigDecimal;
@@ -27,6 +27,8 @@ public class UI {
     private final UserRepository userRepository;
     private final AuthService authService;
 
+    private final OrderService orderService;
+
     private User currentUser;
 
     public UI() {
@@ -36,10 +38,11 @@ public class UI {
         userRepository = new UserRepository();
         authService = new AuthService(userRepository);
 
-        ProductService productService =
-                new ProductService(productRepository, accountRepository);
-
+        ProductService productService = new ProductService(productRepository, accountRepository);
         controller = new ProductController(productService);
+
+        OrderRepository orderRepository = new PostgresOrderRepository();
+        orderService = new OrderService(controller, orderRepository);
     }
 
     public void start() {
@@ -56,9 +59,9 @@ public class UI {
                 case "1" -> {
                     login();
                     userController.setCurrentUser(currentUser);
-                    mainMenu(); // Переходим в основное меню после логина
+                    mainMenu();
                 }
-                case "2" -> register(); // Регистрация нового пользователя
+                case "2" -> register();
                 case "3" -> {
                     System.out.println("Goodbye!");
                     return;
@@ -76,14 +79,41 @@ public class UI {
             try {
                 switch (choice) {
                     case "1" -> listProducts();
-                    case "2" -> addProduct();
-                    case "3" -> sellProduct();
-                    case "4" -> restockProduct();
+
+                    case "2" -> {
+                        if (currentUser.getRole() == Role.CLIENT) {
+                            createOrderWithDelivery();
+                        } else if (currentUser.getRole() == Role.ADMIN) {
+                            addProduct();
+                        } else {
+                            System.out.println("Unknown option.");
+                        }
+                    }
+
+                    case "3" -> {
+                        if (currentUser.getRole() == Role.CLIENT) {
+                            myOrders();
+                        } else if (currentUser.getRole() == Role.ADMIN) {
+                            sellProduct();
+                        } else {
+                            System.out.println("Unknown option.");
+                        }
+                    }
+
+                    case "4" -> {
+                        if (currentUser.getRole() == Role.ADMIN) {
+                            restockProduct();
+                        } else {
+                            System.out.println("Unknown option.");
+                        }
+                    }
+
                     case "5" -> {
                         System.out.println("Logging out...");
                         currentUser = null;
-                        return; // Выход в верхнее меню (логин/регистрация)
+                        return;
                     }
+
                     default -> System.out.println("Unknown option.");
                 }
             } catch (AccessDeniedException e) {
@@ -127,7 +157,6 @@ public class UI {
             System.out.print("Choose password: ");
             String password = scanner.nextLine().trim();
 
-            // Создаем нового пользователя с ролью CLIENT
             User newUser = new User(username, password, Role.CLIENT);
             authService.register(newUser);
 
@@ -136,11 +165,15 @@ public class UI {
         }
     }
 
-
     private void printMenu() {
         System.out.println("\n==============================");
         System.out.println("Balance: $" + controller.getBalance());
         System.out.println("1. List products");
+
+        if (currentUser.getRole() == Role.CLIENT) {
+            System.out.println("2. Create order with delivery");
+            System.out.println("3. My orders");
+        }
 
         if (currentUser.getRole() == Role.ADMIN) {
             System.out.println("2. Add product");
@@ -224,7 +257,93 @@ public class UI {
         }
     }
 
-    /* ================= HELPERS ================= */
+    private void createOrderWithDelivery() {
+        try {
+            int productId = readInt("Product ID: ");
+            int qty = readInt("Quantity: ");
+
+            DeliveryMethod method = chooseDeliveryMethod();
+            Address address = null;
+
+            if (method != DeliveryMethod.PICKUP) {
+                address = readAddress();
+            }
+
+            Order order = orderService.createOrder(
+                    currentUser.getUsername(),
+                    productId,
+                    qty,
+                    method,
+                    address
+            );
+
+            System.out.println("\n✅ ORDER CREATED!");
+            System.out.println("Order ID: " + order.getId());
+            System.out.println("Product: " + order.getProductName() + " x" + order.getQuantity());
+            System.out.println("Delivery: " + order.getDeliveryMethod());
+            System.out.println("Delivery fee: " + order.getDeliveryFee());
+            System.out.println("Status: " + order.getDeliveryStatus());
+            System.out.println("Address: " + (order.getAddress() == null ? "PICKUP" : order.getAddress()));
+            System.out.println("TOTAL: " + order.getTotal());
+            System.out.println("Balance: $" + controller.getBalance());
+
+        } catch (InsufficientStockException | IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void myOrders() {
+        List<Order> orders = orderService.listOrdersByUser(currentUser.getUsername());
+        if (orders.isEmpty()) {
+            System.out.println("No orders yet.");
+            return;
+        }
+
+        System.out.println("\n=== MY ORDERS ===");
+        for (Order o : orders) {
+            System.out.printf(
+                    "#%d | %s x%d | delivery=%s (%s) | total=%s | %s%n",
+                    o.getId(),
+                    o.getProductName(),
+                    o.getQuantity(),
+                    o.getDeliveryMethod(),
+                    o.getDeliveryStatus(),
+                    o.getTotal(),
+                    o.getCreatedAt()
+            );
+        }
+    }
+
+    private DeliveryMethod chooseDeliveryMethod() {
+        System.out.println("\nChoose delivery method:");
+        System.out.println("1) PICKUP (free)");
+        System.out.println("2) COURIER ($5.00)");
+        System.out.println("3) EXPRESS ($12.00)");
+        int c = readInt("Choose: ");
+
+        return switch (c) {
+            case 1 -> DeliveryMethod.PICKUP;
+            case 2 -> DeliveryMethod.COURIER;
+            case 3 -> DeliveryMethod.EXPRESS;
+            default -> throw new IllegalArgumentException("Invalid delivery option");
+        };
+    }
+
+    private Address readAddress() {
+        System.out.print("City: ");
+        String city = scanner.nextLine().trim();
+
+        System.out.print("Street: ");
+        String street = scanner.nextLine().trim();
+
+        System.out.print("House: ");
+        String house = scanner.nextLine().trim();
+
+        System.out.print("Phone: ");
+        String phone = scanner.nextLine().trim();
+
+        return new Address(city, street, house, phone);
+    }
 
     private int readInt(String prompt) {
         while (true) {
