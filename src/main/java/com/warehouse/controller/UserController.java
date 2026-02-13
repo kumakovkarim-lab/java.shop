@@ -7,10 +7,8 @@ import com.warehouse.model.User;
 import com.warehouse.service.AuthService;
 
 public class UserController {
-    private AuthService authService;
+    private final AuthService authService;
     private User currentUser;
-
-    public UserController() {}
 
     public UserController(AuthService authService) {
         this.authService = authService;
@@ -25,29 +23,54 @@ public class UserController {
         authService.register(newUser);
     }
 
-    public void setCurrentUser(User user) {
-        this.currentUser = user;
-    }
-
-    public User getCurrentUser() {
-        return currentUser;
-    }
-
-    public boolean isAdmin() {
-        return currentUser != null && currentUser.getRole() == Role.ADMIN;
-    }
-
-    public void checkAdmin() {
-        if (!isAdmin()) {
-            throw new AccessDeniedException("Admin privileges required.");
-        }
+    public void logout() {
+        this.currentUser = null;
     }
 
     public boolean isLoggedIn() {
         return currentUser != null;
     }
 
-    public void logout() {
-        this.currentUser = null;
+    public User getCurrentUser() {
+        if (currentUser == null) {
+            throw new IllegalStateException("Not logged in.");
+        }
+        return currentUser;
+    }
+
+    public String getCurrentUsername() {
+        return getCurrentUser().getUsername();
+    }
+
+    public Role getCurrentRole() {
+        return getCurrentUser().getRole();
+    }
+
+    public boolean isAdmin() {
+        return isLoggedIn() && currentUser.getRole() == Role.ADMIN;
+    }
+
+    public boolean isClient() {
+        return isLoggedIn() && currentUser.getRole() == Role.CLIENT;
+    }
+
+    public void requireLogin() {
+        if (!isLoggedIn()) {
+            throw new IllegalStateException("Please login first.");
+        }
+    }
+
+    public void checkAdmin() {
+        requireLogin();
+        if (!isAdmin()) {
+            throw new AccessDeniedException("Admin privileges required.");
+        }
+    }
+
+    public void checkClient() {
+        requireLogin();
+        if (!isClient()) {
+            throw new AccessDeniedException("Client privileges required.");
+        }
     }
 }
