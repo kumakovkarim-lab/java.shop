@@ -1,52 +1,127 @@
 package com.warehouse;
-
 import com.warehouse.controller.ProductController;
+import com.warehouse.controller.UserController;
 import com.warehouse.exceptions.ValidationException;
 import com.warehouse.model.Product;
+import com.warehouse.model.Role;
+import com.warehouse.model.User;
 import com.warehouse.repository.AccountRepository;
 import com.warehouse.repository.ProductRepository;
 import com.warehouse.repository.CategoryRepository;
+import com.warehouse.repository.UserRepository;
 import com.warehouse.exceptions.InsufficientStockException;
 import com.warehouse.service.ProductService;
+import com.warehouse.service.AuthService;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleApp {
+
     public static void main(String[] args) {
-        ProductRepository repository = new ProductRepository();
-        AccountRepository accountRepository = new AccountRepository();
+        ProductRepository productRepository = new ProductRepository();
         CategoryRepository categoryRepository = new CategoryRepository();
-        ProductService service = new ProductService(repository, accountRepository);
-        ProductController controller = new ProductController(service);
+        AccountRepository accountRepository = new AccountRepository();
+        UserRepository userRepository = new UserRepository();
+
+        ProductService productService = new ProductService(productRepository, accountRepository);
+        AuthService authService = new AuthService(userRepository);
+
+        ProductController productController = new ProductController(productService);
+        UserController userController = new UserController(authService);
 
         try (Scanner scanner = new Scanner(System.in)) {
+            while (!userController.isLoggedIn()) {
+                System.out.println("\n--- Warehouse System ---");
+                System.out.println("1. Login");
+                System.out.println("2. Register");
+                System.out.print("Choose: ");
+                String authChoice = scanner.nextLine().trim();
+
+                if (authChoice.equals("1")) {
+                    handleLogin(scanner, userController);
+                } else if (authChoice.equals("2")) {
+                    handleRegister(scanner, userController);
+                }
+            }
+
             while (true) {
-                printMenu(controller);
+                printMenu(productController, userController);
                 String choice = scanner.nextLine().trim();
 
                 switch (choice) {
-                    case "1" -> listProducts(controller);
-                    case "2" -> addProduct(scanner, controller, categoryRepository);
-                    case "3" -> sellProduct(scanner, controller);
-                    case "4" -> restockProduct(scanner, controller);
+                    case "1" -> listProducts(productController);
+                    case "2" -> {
+                        userController.checkAdmin();
+                        addProduct(scanner, productController, categoryRepository);
+                    }
+                    case "3" -> sellProduct(scanner, productController);
+                    case "4" -> {
+                        userController.checkAdmin();
+                        restockProduct(scanner, productController);
+                    }
                     case "5" -> {
-                        System.out.println("Goodbye!");
+                        userController.checkAdmin();
+                        deleteProduct(scanner, productController);
+                    }
+                    case "6" -> {
+                        System.out.println("Exiting...");
                         return;
                     }
-                    default -> System.out.println("Unknown option. Try again.");
+                    default -> System.out.println("Invalid option.");
                 }
             }
         }
     }
-    private static void printMenu(ProductController controller) {
-        System.out.println("\nCurrent Balance: $" + controller.getBalance());
+
+    private static void handleLogin(Scanner scanner, UserController userController) {
+        System.out.print("Username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("Password: ");
+        String password = scanner.nextLine().trim();
+        try {
+            userController.login(username, password);
+            System.out.println("Logged in as: " + userController.getCurrentUser().getUsername());
+        } catch (Exception e) {
+            System.out.println("Login failed: " + e.getMessage());
+        }
+    }
+
+    private static void handleRegister(Scanner scanner, UserController userController) {
+        System.out.print("New Username: ");
+        String username = scanner.nextLine().trim();
+        System.out.print("New Password: ");
+        String password = scanner.nextLine().trim();
+        System.out.println("Select Role: 1. CLIENT | 2. ADMIN");
+        String roleChoice = scanner.nextLine().trim();
+        Role role = roleChoice.equals("2") ? Role.ADMIN : Role.CLIENT;
+
+        try {
+            userController.register(username, password, role);
+            System.out.println("Registration successful. Please login.");
+        } catch (Exception e) {
+            System.out.println("Registration failed: " + e.getMessage());
+        }
+    }
+
+    private static void printMenu(ProductController productController, UserController userController) {
+        System.out.println("\nUser: " + userController.getCurrentUser().getUsername() + " [" + userController.getCurrentUser().getRole() + "]");
+        System.out.println("Current Balance: $" + productController.getBalance());
         System.out.println("1. List products");
-        System.out.println("2. Add product");
+
+        if (userController.isAdmin()) {
+            System.out.println("2. Add product");
+        }
+
         System.out.println("3. Sell product");
-        System.out.println("4. Restock product");
-        System.out.println("5. Exit");
+
+        if (userController.isAdmin()) {
+            System.out.println("4. Restock product");
+            System.out.println("5. Delete product");
+        }
+
+        System.out.println("6. Exit");
         System.out.print("Choose an option: ");
     }
 
@@ -80,11 +155,26 @@ public class ConsoleApp {
             System.out.println("Product added.");
         } catch (ValidationException e) {
             System.out.println("Validation error: " + e.getMessage());
-        }catch (Exception e) {
+        } catch (Exception e) {
             System.out.println("Unexpected error: " + e.getMessage());
         }
+    }
 
+    private static void deleteProduct(Scanner scanner, ProductController controller) {
+        int productId = readInt(scanner, "Enter Product ID to delete: ");
+        System.out.print("Confirm deletion? (yes/no): ");
+        String confirm = scanner.nextLine().trim().toLowerCase();
 
+        if (confirm.equals("yes")) {
+            boolean deleted = controller.deleteProduct(productId);
+            if (deleted) {
+                System.out.println("Product deleted.");
+            } else {
+                System.out.println("Product not found.");
+            }
+        } else {
+            System.out.println("Deletion cancelled.");
+        }
     }
 
     private static void sellProduct(Scanner scanner, ProductController controller) {
@@ -93,15 +183,12 @@ public class ConsoleApp {
 
         try {
             Product updatedProduct = controller.sellProduct(productId, amount);
-            int oldQuantity = updatedProduct.getQuantity() + amount;
             System.out.println("\n* SALES *");
             System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
-            System.out.printf("Price per unit: %s%n", updatedProduct.getPrice());
-            System.out.printf("Quantity sold: %d%n", amount);
-            System.out.printf("Total income: %s%n", updatedProduct.getPrice().multiply(new BigDecimal(amount)));
-            System.out.println("New Balance: $" + controller.getBalance());
-            System.out.println("----------------------------");
-            System.out.printf("Remaining stock: %d%n", updatedProduct.getQuantity());
+            System.out.printf("Price: %s | Sold: %d | Total: %s%n",
+                    updatedProduct.getPrice(),
+                    amount,
+                    updatedProduct.getPrice().multiply(new BigDecimal(amount)));
             System.out.println("Sale completed.");
         } catch (InsufficientStockException | IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
@@ -113,24 +200,11 @@ public class ConsoleApp {
         int amount = readInt(scanner, "Amount to restock: ");
         try {
             Product updatedProduct = controller.restockProduct(productId, amount);
-            int oldQuantity = updatedProduct.getQuantity() - amount;
-            BigDecimal totalCost = updatedProduct.getPrice().multiply(new BigDecimal(amount));
-            System.out.println("\n* RESTOCK *");
-            System.out.printf("Product: %s (ID: %d)%n", updatedProduct.getName(), updatedProduct.getId());
-            System.out.printf("Previous Quantity: %d%n", oldQuantity);
-            System.out.printf("Added: %d%n", amount);
-            System.out.printf("Total cost: %s%n", totalCost);
-            System.out.printf("Current Quantity: %d%n", updatedProduct.getQuantity());
-            System.out.println("New Balance: $" + controller.getBalance());
-            System.out.println("----------------------------");
-            System.out.println("Restock completed.");
+            System.out.println("Restock successful. New quantity: " + updatedProduct.getQuantity());
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
-
-
-
 
     private static int readInt(Scanner scanner, String prompt) {
         while (true) {
@@ -139,7 +213,7 @@ public class ConsoleApp {
             try {
                 return Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                System.out.println("Please enter a whole number.");
+                System.out.println("Enter a whole number.");
             }
         }
     }
@@ -151,9 +225,8 @@ public class ConsoleApp {
             try {
                 return new BigDecimal(input);
             } catch (NumberFormatException e) {
-                System.out.println("Please enter a valid number.");
+                System.out.println("Enter a valid number.");
             }
         }
     }
 }
-
