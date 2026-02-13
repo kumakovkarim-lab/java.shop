@@ -12,8 +12,6 @@ import java.util.Optional;
 
 public class UserRepository {
 
-
-
     public Optional<User> findByUsername(String username) {
         String sql = """
                 SELECT id, username, password, role
@@ -21,8 +19,8 @@ public class UserRepository {
                 WHERE username = ?
                 """;
 
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection connection = DatabaseConfig.getInstance().getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             stmt.setString(1, username);
 
@@ -38,20 +36,20 @@ public class UserRepository {
         return Optional.empty();
     }
 
-
     public boolean existsByUsername(String username) {
         String sql = "SELECT 1 FROM public.users WHERE username = ?";
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseConfig.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
-            return stmt.executeQuery().next();
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Error checking username existence", e);
         }
     }
-
 
     public User save(User user) {
         String sql = """
@@ -60,7 +58,7 @@ public class UserRepository {
                 RETURNING id
                 """;
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseConfig.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUsername());
